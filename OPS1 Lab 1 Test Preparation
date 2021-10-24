@@ -1,0 +1,186 @@
+OPS1 Lab 1 Test Preparation
+
+STDIN_FILENO  Standard input value, stdin.  Its value is 0.
+
+STDOUT_FILENO Standard output value, stdout.  Its value is 1.
+
+STDERR_FILENO Standard error value, stderr.  Its value is 2.
+
+int dprintf(int fildes, const char *restrict format, ...); - write bytes to the file descriptor
+int fprintf(FILE *restrict stream, const char *restrict format, ...); - write bytes to the stream
+int printf(const char *restrict format, ...); - write to stdout
+int snprintf(char *restrict s, size_t n, const char *restrict format, ...); - write n bytes to the string
+int sprintf(char *restrict s, const char *restrict format, ...); - write to the string
+
+they return number of bytes written (s(n)printf excludes terminating byte)
+
+EXIT_FAILURE - NON-ZERO VALUE 
+EXIT_SUCCESS = 0
+
+char *fgets(char *restrict s, int n, FILE *restrict stream); - get string from the stream. 
+fgets stops reading when n-1 bytes are read OR "\n" encountered OR EOF encountered
+if success, fgets returns s (string)
+if EOF, fgets returns null pointer (NULL)
+if error, returns NULL, errno is set
+
+void exit(int status); - terminate a process
+status may be 0, EXIT_SUCCESS, EXIT_FAILURE, or any other value (only 8 significant bits)
+If exit() is called more than once, the behavior  is  undefined.
+The  exit()  function shall then flush all open streams 
+with unwritten buffered data and close all open streams. Finally,
+the process shall be terminated
+
+int atoi(const char *str); - convert string to an integer
+returns converted value if the value can be represented
+
+The call atoi(str) shall be equivalent to:
+(int) strtol(str, (char **)NULL, 10)
+
+long strtol(const char *restrict str, char **restrict endptr, int base); - convert a string to long
+
+int getopt(int argc, char * const argv[], const char *optstring); - get optional parameters
+
+optstring example : "t:n:" e.g -t Something -n Something
+':' is used for mandatory parameter
+'::' for optional parameter
+
+int opterr
+If the value of this variable is nonzero, then getopt prints an error message 
+to the standard error stream if it encounters an unknown option character or 
+an option with a missing required argument. This is the default behavior. If 
+you set this variable to zero, getopt does not print any messages, but it still 
+returns the character '?' to indicate an error. 
+
+int optopt
+When getopt encounters an unknown option character or an option with a missing
+required argument, it stores that option character in this variable. You can 
+use this for providing your own diagnostic messages. 
+
+int optind
+
+This variable is set by getopt to the index of the next element of the argv 
+array to be processed. Once getopt has found all of the option arguments, 
+you can use this variable to determine where the remaining non-option arguments 
+begin. The initial value of this variable is 1. 
+
+char * optarg
+
+This variable is set by getopt to point at the value of the option argument,
+for those options that accept arguments. 
+
+The getopt() function shall return the next option character specified on the command line.
+getopt() shall return −1 when all command line options are parsed.
+
+environ — array of character pointers to the environment strings
+last pointer of the environ is NULL
+array is made visible by the exec() call 
+when a child process is created it inhertis a copy of parent environment
+
+char *getenv(const char *name); - get value of a environmental variable
+if success, returns pointer to a string with value of the environ variable
+if cannot be found, returns NULL
+
+int putenv(char *string); - change or add a value to the environment
+The string argument should point to a string of the form "name=value"
+Upon successful completion, putenv() shall return 0; 
+otherwise, it shall return a non-zero value and set errno to 
+indicate the error.
+
+int setenv(const char *envname, const char *envval, int overwrite); - add or change environmental variable
+if envname contains '=', function fails
+if envname already exists AND ovewrite != 0, value will be changed
+if envname already exists AND overwrite == 0, value will NOT be changed
+Upon successful completion, zero shall be returned. Otherwise, −1 shall be returned,
+errno set to indicate the error, and the environment shall be unchanged.
+
+int system(const char *command); - execute a shell command
+It creates child process using fork() and executes a command
+
+it returns after command completion
+
+If command is NULL, then system() returns a status indicating
+whether a shell is available on the system. (zero if NOT available, NON-zero if available)
+
+If child process cannot be created, or its status cant be retrieved, it returns -1
+
+If all system calls succeed, then the return value is the termination status 
+of the child shell used to  execute  command. (zero?)
+
+DIR *opendir(const char *dirname) - open a directory
+if success, returns pointer to DIR
+if failure, returns NULL
+
+int closedir(DIR *dirp) - close directory
+if success, returns 0
+if failure, returns -1
+
+struct dirent *readdir(DIR *dirp) read a directory
+Upon  successful  completion,  readdir() shall return 
+a pointer to an object of type struct dirent.
+If an error occured, it returns NULL and errno is set 
+If readdir() reached the end of directory, it returns NULL and errno remains unchanged
+
+dirent.h - contains DIR type 
+DIR *d; d->d_ino is file serial number, d->d_name - filename string of entry
+
+int lstat(const char *restrict path, struct stat *restrict buf); - get file status
+int stat(const char *restrict path, struct stat *restrict buf); - get file status
+
+lstat is equivalent to stat except for symbolic links
+lstat contains information about the link itself, while stat - about the file link points to 
+if success, returns 0, otherwise -1 and errno is set 
+
+struct stat {
+               dev_t     st_dev;         /* ID of device containing file */
+               ino_t     st_ino;         /* Inode number */
+               mode_t    st_mode;        /* File type and mode */
+               nlink_t   st_nlink;       /* Number of hard links */
+               uid_t     st_uid;         /* User ID of owner */
+               gid_t     st_gid;         /* Group ID of owner */
+               dev_t     st_rdev;        /* Device ID (if special file) */
+               off_t     st_size;        /* Total size, in bytes */
+               blksize_t st_blksize;     /* Block size for filesystem I/O */
+               blkcnt_t  st_blocks;      /* Number of 512B blocks allocated */ 
+}
+struct stat s;
+switch(s.st_mode) {
+case S_IFBLK:  printf("block device\n");            break;
+case S_IFCHR:  printf("character device\n");        break;
+case S_IFDIR:  printf("directory\n");               break;
+case S_IFIFO:  printf("FIFO/pipe\n");               break;
+case S_IFLNK:  printf("symlink\n");                 break;
+case S_IFREG:  printf("regular file\n");            break;
+case S_IFSOCK: printf("socket\n");                  break; }
+
+
+char *getcwd(char *buf, size_t size); - get the path of the current working directory
+returns cwd on success, otherwise NULL and errno is set 
+
+int chdir(const char *path); - change working directory
+on success returns 0, otherwise -1
+
+int ftw(const char *path, int (*fn)(const char *, 
+ const struct stat *ptr, int flag), int ndirs); - traverse a file tree 
+on success returns 0, if error returns -1
+if fn returns non-zero value, it returns the same 
+
+int nftw(const char *path, int (*fn)(const char *,
+           const struct stat *, int, struct FTW *), int fd_limit, int flags); - traverse a file tree 
+works the same as ftw, but have flags described in $man 3p nftw
+FTW_PHYS - shall not follow symbolic links, count them as files
+
+
+FILE *fopen(const char *restrict pathname, const char *restrict mode); - open a file stream
+Modes: "r" - read, "w" - (truncate to zero length or create)write, "a" - append
+"r+" - read/write existing file,"w+" - read/write with truncating OR create new, "a+" read/write OR create new
+returns pointer to FILE on success OR NULL on failure
+
+int fseek(FILE *stream, long offset, int whence) - repostion a file-position indicator in a stream
+returns 0 on success, -1 on failure 
+whence may be SEEK_SET - beginning of the __FILE__
+              SEEK_CUR - current position
+              SEEK_END - end of file 
+
+int unlink(const char *path); - remove a directory entry relative to directory file descriptor
+if path is a symbolic link, it shall remove it 
+returns 0 on success, -1 on failure
