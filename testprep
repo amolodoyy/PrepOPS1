@@ -1,0 +1,143 @@
+pthreads - POSIX threads
+Most pthreads functions return 0 on success, and an error number  on  failure.   Note  that  the
+pthreads  functions do not set errno.  For each of the pthreads functions that can return an er‐
+ror, POSIX.1-2001 specifies that the function can never fail with the error EINTR.
+Each of the threads in a process has a unique thread identifier (stored in the type  pthread_t).
+This  identifier is returned to the caller of pthread_create(3), and a thread can obtain its own
+thread identifier using pthread_self(3).
+
+int pthread_create(pthread_t *restrict thread, const pthread_attr_t *restrict attr,
+void *(*start_routine)(void*), void *restrict arg);
+The  pthread_create()  function  shall  create  a new thread, with attributes specified by attr,
+within a process. If attr is NULL, the default attributes shall be used. If the attributes spec‐
+ified  by attr are modified later, the thread''s attributes shall not be affected.  Upon success‐
+ful completion, pthread_create() shall store the ID of the created thread in the location refer‐
+enced by thread.
+
+The  thread  is created executing start_routine with arg as its sole argument. If the start_rou‐
+tine returns, the effect shall be as if there was an implicit call to pthread_exit()  using  the
+return value of start_routine as the exit status. Note that the thread in which main() was orig‐
+inally invoked differs from this. When it returns from main(), the effect shall be as  if  there
+was an implicit call to exit() using the return value of main() as the exit status.
+
+If  pthread_create() fails, no new thread is created and the contents of the location referenced
+by thread are undefined.
+
+int pthread_join(pthread_t thread, void **value_ptr); - wait for a thread to terminate
+The  pthread_join()  function  shall  suspend  execution  of the calling thread until the target
+thread terminates, unless the target thread has already terminated. On return from a  successful
+pthread_join()  call  with  a non-NULL value_ptr argument, the value passed to pthread_exit() by
+the terminating thread shall be made available in the location referenced by value_ptr.  When  a
+pthread_join()  returns successfully, the target thread has been terminated. The results of mul‐
+tiple simultaneous calls to pthread_join() specifying the same target thread are  undefined.  If
+the thread calling pthread_join() is canceled, then the target thread shall not be detached.
+
+The rand_r()  function  shall  compute  a  sequence  of  pseudo-random  integers  in  the  range
+[0,{RAND_MAX}].  (The value of the {RAND_MAX} macro shall be at least 32767.)
+
+int pthread_mutex_destroy(pthread_mutex_t *mutex);
+int pthread_mutex_init(pthread_mutex_t *restrict mutex,
+const pthread_mutexattr_t *restrict attr); - destroy and initialize a mutex
+
+The pthread_mutex_init() function shall initialize the mutex referenced by mutex with attributes
+specified by attr.  If attr is NULL, the default mutex attributes are used; the effect shall  be
+the  same  as passing the address of a default mutex attributes object. Upon successful initial‐
+ization, the state of the mutex becomes initialized and unlocked.
+
+The pthread_mutex_destroy() function shall destroy the mutex object referenced by mutex; the mu‐
+tex object becomes, in effect, uninitialized.  An  implementation  may  cause  pthread_mutex_de‐
+stroy() to set the object referenced by mutex to an invalid value.
+
+int pthread_mutex_lock(pthread_mutex_t *mutex);
+int pthread_mutex_unlock(pthread_mutex_t *mutex);
+
+The  mutex object referenced by mutex shall be locked by a call to pthread_mutex_lock() that re‐
+turns zero or [EOWNERDEAD].  If the mutex is already  locked  by  another  thread,  the  calling
+thread shall block until the mutex becomes available. This operation shall return with the mutex
+object referenced by mutex in the locked state with the calling thread as its owner.
+
+The  pthread_mutex_unlock()  function  shall  release the mutex object referenced by mutex.  The
+manner in which a mutex is released is dependent upon the mutex''s type attribute. If  there  are
+threads  blocked  on the mutex object referenced by mutex when pthread_mutex_unlock() is called,
+resulting in the mutex becoming available, the scheduling policy shall  determine  which  thread
+shall acquire the mutex.
+
+int pthread_detach(pthread_t thread); - detach a thread 
+The  pthread_detach()  function shall indicate to the implementation that storage for the thread
+thread can be reclaimed when that thread terminates. If thread has not  terminated,  pthread_de‐
+tach() shall not cause it to terminate.
+
+int pthread_attr_init(pthread_attr_t *attr); - initialize the thread attributes object
+int pthread_attr_destroy(pthread_attr_t *attr); - destroy the thread attributes object
+
+The  pthread_attr_destroy() function shall destroy a thread attributes object. An implementation
+may cause pthread_attr_destroy() to set attr to an implementation-defined invalid value.  A  de‐
+stroyed  attr  attributes  object can be reinitialized using pthread_attr_init(); the results of
+otherwise referencing the object after it has been destroyed are undefined.
+
+The pthread_attr_init() function shall initialize a thread attributes object attr with  the  de‐
+fault value for all of the individual attributes used by a given implementation.
+
+int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate);
+int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
+
+The  detachstate  attribute  controls whether the thread is created in a detached state.  If the
+thread is created detached, then use of the ID of the newly created thread  by  the  pthread_de‐
+tach() or pthread_join() function is an error.
+
+The  pthread_attr_getdetachstate()  and  pthread_attr_setdetachstate()  functions, respectively,
+shall get and set the detachstate attribute in the attr object.
+
+For pthread_attr_getdetachstate(), detachstate shall be set to either PTHREAD_CREATE_DETACHED or
+PTHREAD_CREATE_JOINABLE.
+
+For  pthread_attr_setdetachstate(), the application shall set detachstate to either PTHREAD_CRE‐
+ATE_DETACHED or PTHREAD_CREATE_JOINABLE.
+
+
+int pthread_sigmask(int how, const sigset_t *restrict set,
+sigset_t *restrict oset);
+int sigprocmask(int how, const sigset_t *restrict set,
+sigset_t *restrict oset);
+ 
+The  pthread_sigmask()  function  shall  examine or change (or both) the calling thread''s signal
+mask, regardless of the number of threads in the process. The function shall  be  equivalent  to
+sigprocmask(), without the restriction that the call be made in a single-threaded process.
+
+int sigwait(const sigset_t *restrict set, int *restrict sig); - wait for queued signals
+The sigwait() function shall select a pending signal from set, atomically clear it from the sys‐
+tem''s set of pending signals, and return that signal number in the location referenced  by  sig.
+If  prior  to the call to sigwait() there are multiple pending instances of a single signal num‐
+ber, it is implementation-defined whether upon successful return there are any remaining pending
+signals  for  that  signal  number.  If the implementation supports queued signals and there are
+multiple signals queued for the signal number selected, the first such queued signal shall cause
+a return from sigwait() and the remainder shall remain queued. If no signal in set is pending at
+the time of the call, the thread shall be suspended until one or more becomes pending. The  sig‐
+nals defined by set shall have been blocked at the time of the call to sigwait(); otherwise, the
+behavior is undefined. The effect of sigwait() on the signal actions for the signals in  set  is
+unspecified.
+
+The pthread_cleanup_push() function pushes routine onto the top of the stack  of  clean-up  han‐
+    dlers.  When routine is later invoked, it will be given arg as its argument.
+
+    The  pthread_cleanup_pop() function removes the routine at the top of the stack of clean-up han‐
+    dlers, and optionally executes it if execute is nonzero.
+
+    A cancellation clean-up handler is popped from the stack and executed in the  following  circum‐
+    stances:
+
+    1. When  a  thread  is canceled, all of the stacked clean-up handlers are popped and executed in
+       the reverse of the order in which they were pushed onto the stack.
+
+    2. When a thread terminates by calling pthread_exit(3), all clean-up handlers  are  executed  as
+       described in the preceding point.  (Clean-up handlers are not called if the thread terminates
+       by performing a return from the thread start function.)
+
+    3. When a thread calls pthread_cleanup_pop() with  a  nonzero  execute  argument,  the  top-most
+       clean-up handler is popped and executed.
+
+The  clock_getres() function shall return the resolution of any clock. Clock resolutions are im‐
+plementation-defined and cannot be set by a process. If the argument res is not NULL, the  reso‐
+lution  of  the  specified  clock  shall be stored in the location pointed to by res.  If res is
+NULL, the clock resolution is not returned. If the time argument of  clock_settime()  is  not  a
+multiple of res, then the value is truncated to a multiple of res.
